@@ -2,8 +2,8 @@
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>嵐庭苑：順向坡 × 地籍地號 × 1F/B4F 空間套疊互動分析</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+<title>嵐庭苑：順向坡 × 地籍地號 × 1F/B4F 空間套疊分析</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -12,35 +12,37 @@
     --muted: #94a3b8;
     --accent: #38bdf8;
   }
-  * { box-sizing: border-box; font-family: "Microsoft JhengHei", "PingFang TC", sans-serif; }
-  body { margin: 0; padding: 20px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; }
-  h1 { font-size: 22px; margin: 0 0 8px 0; color: #fff; text-align: center; }
-  .subtitle { font-size: 14px; color: var(--muted); margin-bottom: 18px; text-align: center; }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "PingFang TC", sans-serif; -webkit-tap-highlight-color: transparent; }
+  body { margin: 0; padding: 12px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+  
+  h1 { font-size: clamp(17px, 4.5vw, 22px); margin: 4px 0 6px 0; color: #fff; text-align: center; line-height: 1.35; }
+  .subtitle { font-size: clamp(12px, 3.2vw, 14px); color: var(--muted); margin-bottom: 12px; text-align: center; line-height: 1.4; }
   
   .main-container {
     display: flex;
-    gap: 20px;
+    gap: 16px;
     max-width: 1360px;
     width: 100%;
-    flex-wrap: wrap;
+    align-items: flex-start;
   }
 
   /* 左側控制面板 */
   .controls {
     flex: 1;
-    min-width: 310px;
-    max-width: 360px;
+    min-width: 300px;
+    max-width: 380px;
     background: var(--panel);
-    padding: 18px;
+    padding: 14px;
     border-radius: 12px;
     border: 1px solid #334155;
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 12px;
+    width: 100%;
   }
   .control-group {
     background: #0f172a;
-    padding: 12px 14px;
+    padding: 12px;
     border-radius: 8px;
     border-left: 4px solid var(--accent);
   }
@@ -49,92 +51,155 @@
   .control-group.bldg { border-left-color: #22c55e; }
   .control-group.b4f { border-left-color: #60a5fa; }
 
-  .layer-header {
+  .layer-header label {
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 8px;
     font-weight: bold;
     font-size: 15px;
     margin-bottom: 6px;
+    cursor: pointer;
+    line-height: 1.3;
   }
-  .layer-desc { font-size: 12.5px; color: var(--muted); line-height: 1.4; margin-bottom: 8px; }
-  .slider-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #cbd5e1; }
-  input[type="range"] { flex: 1; cursor: pointer; }
-  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+  .layer-desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-bottom: 10px; }
+  .slider-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #cbd5e1; }
+  .slider-row span { min-width: 55px; }
+  
+  input[type="range"] { flex: 1; height: 6px; cursor: pointer; accent-color: #38bdf8; }
+  input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; accent-color: #38bdf8; }
 
   /* 右側畫布區 */
+  .viewer-wrap {
+    flex: 2.4;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
   .viewer {
-    flex: 2.5;
-    min-width: 600px;
-    background: #f8fafc;
+    width: 100%;
+    background: #f1f5f9;
     border-radius: 12px;
     position: relative;
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    overflow: auto;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.45);
     border: 2px solid #475569;
+    -webkit-overflow-scrolling: touch;
   }
-  svg { width: 100%; height: auto; display: block; user-select: none; }
-
-  /* 實拍圖疊合上傳區 */
-  .upload-box {
-    background: #1e293b;
-    border: 1px dashed #64748b;
-    padding: 12px;
-    border-radius: 8px;
-    margin-top: 4px;
-  }
-  .upload-box h4 { margin: 0 0 8px 0; font-size: 14px; color: #38bdf8; }
-  .btn-view {
+  svg {
     width: 100%;
-    padding: 10px;
+    height: auto;
+    display: block;
+    user-select: none;
+    transition: width 0.2s ease;
+  }
+
+  /* 畫布右上角懸浮縮放工具列 */
+  .zoom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #1e293b;
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .zoom-btns { display: flex; gap: 6px; }
+  .btn-sm {
+    padding: 6px 12px;
+    background: #334155;
+    color: #f8fafc;
+    border: 1px solid #475569;
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: bold;
+    cursor: pointer;
+  }
+  .btn-sm:active { background: #475569; }
+  .btn-view {
+    padding: 8px 14px;
     background: #2563eb;
     color: white;
     border: none;
     border-radius: 6px;
+    font-size: 13.5px;
     font-weight: bold;
     cursor: pointer;
-    margin-top: 4px;
-    transition: 0.2s;
+    flex: 1;
+    min-width: 180px;
   }
-  .btn-view:hover { background: #1d4ed8; }
+  .btn-view:active { background: #1d4ed8; }
+
+  /* 實拍圖疊合上傳區 */
+  .upload-box {
+    background: #0f172a;
+    border: 1px dashed #64748b;
+    padding: 12px;
+    border-radius: 8px;
+  }
+  .upload-box h4 { margin: 0 0 6px 0; font-size: 14px; color: #38bdf8; }
 
   /* 底部結論卡片 */
   .summary-bar {
     max-width: 1360px;
     width: 100%;
-    margin-top: 20px;
+    margin-top: 16px;
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 12px;
   }
   .card {
     background: var(--panel);
-    padding: 16px;
+    padding: 14px;
     border-radius: 10px;
     border: 1px solid #334155;
   }
-  .card h3 { margin: 0 0 8px 0; font-size: 16px; color: #38bdf8; }
-  .card p { margin: 0; font-size: 13.5px; color: #cbd5e1; line-height: 1.5; }
-  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; margin-right: 6px; }
+  .card h3 { margin: 0 0 6px 0; font-size: 15px; color: #38bdf8; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+  .card p { margin: 0; font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11.5px; font-weight: bold; }
   .badge-safe { background: #166534; color: #dcfce7; }
   .badge-warn { background: #854d0e; color: #fef9c3; }
+
+  /* 📱 手機與平板響應式斷點 (螢幕寬度小於 900px 時自動轉為上下排列，且地圖置頂) */
+  @media (max-width: 900px) {
+    body { padding: 8px; }
+    .main-container {
+      flex-direction: column;
+      gap: 12px;
+    }
+    .viewer-wrap {
+      order: 1; /* 手機版地圖優先排在最上面 */
+      position: sticky;
+      top: 4px;
+      z-index: 20;
+    }
+    .controls {
+      order: 2; /* 控制面板排在下面，方便邊滑邊看上面地圖 */
+      max-width: 100%;
+      min-width: 100%;
+      padding: 12px;
+    }
+    .summary-bar {
+      grid-template-columns: 1fr;
+    }
+  }
 </style>
 </head>
 <body>
 
-<h1>🏢 嵐庭苑（汐止北山段）順向坡 × 地籍圖 × 1F/B4F 空間套疊分析</h1>
-<div class="subtitle">已將「山崩雲上北下南座標」逆時針旋轉對齊「建案 1F 平面配置圖視角（明峰街水平置底）」</div>
+<h1>🏢 嵐庭苑（汐止北山段）順向坡 × 地籍 × 1F/B4F 套疊</h1>
+<div class="subtitle">已將「山崩雲上北下南座標」旋轉對齊「建案 1F 平面配置圖視角（明峰街水平置底）」</div>
 
 <div class="main-container">
-  <!-- 左側控制面板 -->
+  <!-- 左側控制面板 (手機版會自動排在地圖下方) -->
   <div class="controls">
-    <button class="btn-view" onclick="togglePerspective()">🔄 切換視角：建案1F水平視角 / 正北地圖視角</button>
-
     <div class="control-group warn">
       <div class="layer-header">
         <label><input type="checkbox" id="chk-slope" checked onchange="updateLayers()"> 1. 山崩雲：順向坡與等高線</label>
       </div>
-      <div class="layer-desc">黃色區塊為順向坡(F-104-05990)，平均坡度約15度緩坡，主滑動方向朝左下方(西南側298巷)，僅東南邊緣擦邊基地左上角。</div>
+      <div class="layer-desc">黃色為順向坡(F-104-05990)，平均坡度約15度緩坡，主滑動方向朝左下方(西南側298巷)，僅東南邊緣擦邊基地左上角。</div>
       <div class="slider-row">
         <span>透明度</span>
         <input type="range" id="op-slope" min="0" max="1" step="0.05" value="0.75" oninput="updateLayers()">
@@ -154,9 +219,9 @@
 
     <div class="control-group b4f">
       <div class="layer-header">
-        <label><input type="checkbox" id="chk-b4f" checked onchange="updateLayers()"> 3. 嵐庭苑：B4F 地下室開挖邊界</label>
+        <label><input type="checkbox" id="chk-b4f" checked onchange="updateLayers()"> 3. 嵐庭苑：B4F 開挖邊界</label>
       </div>
-      <div class="layer-desc">藍色粗虛線為B4F連續壁開挖範圍。注意左上角順向坡腳處「大幅階梯狀退縮不開挖」，完全不切斷順向坡腳！</div>
+      <div class="layer-desc">藍色粗虛線為B4F連續壁開挖範圍。左上角順向坡腳處「大幅階梯狀退縮不開挖」，完全不切斷順向坡腳！</div>
       <div class="slider-row">
         <span>透明度</span>
         <input type="range" id="op-b4f" min="0" max="1" step="0.05" value="0.85" oninput="updateLayers()">
@@ -168,304 +233,4 @@
         <label><input type="checkbox" id="chk-cad" checked onchange="updateLayers()"> 4. 國土測繪雲：地籍圖地號</label>
       </div>
       <div class="layer-desc">粉紅框線為地號邊界：978/979位於左側花園與護坡(敏感區邊緣)；988位於右側大樓主體平地。</div>
-      <div class="slider-row">
-        <span>透明度</span>
-        <input type="range" id="op-cad" min="0" max="1" step="0.05" value="0.9" oninput="updateLayers()">
-      </div>
-    </div>
-
-    <!-- 匯入真實照片疊圖功能 -->
-    <div class="upload-box">
-      <h4>📷 進階：載入您的 1F 平面圖照片疊合</h4>
-      <div class="layer-desc">可選取您電腦中的「1F平面圖」或「地籍圖」照片，直接疊在畫布上微調透明度：</div>
-      <input type="file" accept="image/*" onchange="loadUserImage(event)" style="font-size:12px; width:100%; margin-bottom:8px; color:#cbd5e1;">
-      <div class="slider-row">
-        <span>照片透明度</span>
-        <input type="range" id="op-img" min="0" max="1" step="0.05" value="0.5" oninput="updateUserImage()">
-      </div>
-      <div class="slider-row" style="margin-top:4px;">
-        <span>照片縮放</span>
-        <input type="range" id="scale-img" min="0.5" max="1.5" step="0.01" value="1" oninput="updateUserImage()">
-      </div>
-    </div>
-  </div>
-
-  <!-- 右側互動 SVG 畫布 -->
-  <div class="viewer" id="canvas-wrap">
-    <svg id="main-svg" viewBox="0 0 1000 680" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <!-- 格框護坡網格圖樣 -->
-        <pattern id="gridPattern" width="24" height="24" patternTransform="rotate(35)" patternUnits="userSpaceOnUse">
-          <rect width="24" height="24" fill="#d9f99d" />
-          <path d="M 24 0 L 0 0 0 24" fill="none" stroke="#94a3b8" stroke-width="3"/>
-        </pattern>
-        <!-- B4F 斜線圖樣 -->
-        <pattern id="b4fHatch" width="16" height="16" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="0" y2="16" stroke="#2563eb" stroke-width="2" stroke-opacity="0.25" />
-        </pattern>
-        <!-- 箭頭標記 -->
-        <marker id="arrowRed" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 1 L 10 5 L 0 9 z" fill="#dc2626" />
-        </marker>
-        <marker id="arrowBlue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-          <path d="M 0 1 L 10 5 L 0 9 z" fill="#2563eb" />
-        </marker>
-      </defs>
-
-      <!-- 全域旋轉群組（供切換視角使用） -->
-      <g id="world-group" transform="rotate(0, 500, 340)">
-
-        <!-- 【底圖】道路與周邊環境 -->
-        <g id="layer-base">
-          <rect x="-200" y="-200" width="1400" height="1100" fill="#f1f5f9" />
-          <!-- 明峰街道路 -->
-          <rect x="0" y="545" width="1000" height="90" fill="#e2e8f0" stroke="#cbd5e1" stroke-width="2"/>
-          <line x1="0" y1="590" x2="1000" y2="590" stroke="#94a3b8" stroke-width="2" stroke-dasharray="15,15"/>
-          <text x="500" y="580" font-size="18" font-weight="bold" fill="#475569" text-anchor="middle" letter-spacing="6">🛣️ 明峰街（高程 12m ~ 15m 平地）</text>
-          <text x="820" y="625" font-size="14" fill="#64748b" font-weight="bold">↘ 斜對面：金龍國小 (明峰街201號)</text>
-          <text x="120" y="625" font-size="14" fill="#64748b" font-weight="bold">↙ 往明峰街298巷 / OK超商 (高程 12m)</text>
-          <text x="905" y="420" font-size="13" fill="#64748b">鄰房：明峰街216號 ➔</text>
-        </g>
-
-        <!-- 使用者上傳照片塗層 -->
-        <g id="layer-user-img" opacity="0.5" style="display:none;">
-          <image id="user-img-el" x="85" y="80" width="820" height="480" preserveAspectRatio="none" />
-        </g>
-
-        <!-- 【圖層 2】嵐庭苑 1F 平面配置圖 -->
-        <g id="layer-1f" opacity="0.9">
-          <!-- 基地 1F 整體底色 -->
-          <polygon points="95,95 270,190 455,190 475,165 845,165 895,120 925,180 895,525 95,525" fill="#ecfccb" stroke="#65a30d" stroke-width="2"/>
-          
-          <!-- 左上角：978/979 菱形格框護坡 (不開挖區) -->
-          <polygon points="95,95 270,190 365,190 220,285 95,245" fill="url(#gridPattern)" stroke="#4d7c0f" stroke-width="2"/>
-          <text x="190" y="195" font-size="13" font-weight="bold" fill="#365314" text-anchor="middle">1F 菱形格框護坡</text>
-          <text x="190" y="212" font-size="11" fill="#365314" text-anchor="middle">(順應原邊坡加固・不開挖)</text>
-
-          <!-- 左半部：大型景觀花園與步道 -->
-          <path d="M 110,270 Q 260,260 360,220 L 445,270 L 445,500 L 110,500 Z" fill="#bef264" stroke="#84cc16" stroke-width="1.5"/>
-          <!-- 花園S型步道 -->
-          <path d="M 160,480 C 140,380 260,360 300,430 C 330,480 400,450 450,440" fill="none" stroke="#fef08a" stroke-width="22" stroke-linecap="round"/>
-          <path d="M 160,480 C 140,380 260,360 300,430 C 330,480 400,450 450,440" fill="none" stroke="#ca8a04" stroke-width="2" stroke-dasharray="4,4"/>
-          <text x="275" y="365" font-size="15" font-weight="bold" fill="#14532d" text-anchor="middle">🌳 1F 西側大型景觀花園</text>
-          <text x="275" y="385" font-size="12" fill="#166534" text-anchor="middle">(寬約30米緩衝帶，無高樓結構柱)</text>
-
-          <!-- 中上方：兒童遊戲區 (START跑道) -->
-          <rect x="470" y="185" width="160" height="90" rx="15" fill="#fed7aa" stroke="#ea580c" stroke-width="1.5"/>
-          <text x="550" y="230" font-size="12" font-weight="bold" fill="#9a3412" text-anchor="middle">🏃 1F 兒童遊戲區 (START)</text>
-          <text x="550" y="248" font-size="11" fill="#c2410c" text-anchor="middle">北側擋土牆與截水溝緩衝</text>
-
-          <!-- 右半部：大樓 1F 主結構體 (迎賓大廳 + 電梯廳 + 店面) -->
-          <!-- 迎賓大廳 -->
-          <rect x="450" y="280" width="135" height="210" fill="#fef3c7" stroke="#b45309" stroke-width="2"/>
-          <circle cx="520" cy="335" r="28" fill="#fde68a" stroke="#78350f" stroke-width="3"/>
-          <text x="520" y="340" font-size="12" font-weight="bold" fill="#78350f" text-anchor="middle">迎賓大廳</text>
-
-          <!-- 電梯與梯間核心區 -->
-          <rect x="585" y="280" width="145" height="105" fill="#e2e8f0" stroke="#334155" stroke-width="2"/>
-          <text x="658" y="335" font-size="13" font-weight="bold" fill="#0f172a" text-anchor="middle">🏢 大樓結構核心</text>
-          <text x="658" y="352" font-size="11" fill="#334155" text-anchor="middle">(電梯廳/逃生梯間)</text>
-
-          <!-- S1 ~ S4 四戶店面 -->
-          <g fill="#ffffff" stroke="#1e293b" stroke-width="2">
-            <rect x="585" y="385" width="42" height="115"/>
-            <rect x="627" y="385" width="42" height="115"/>
-            <rect x="669" y="385" width="42" height="115"/>
-            <rect x="711" y="385" width="42" height="115"/>
-          </g>
-          <text x="606" y="450" font-size="11" font-weight="bold" fill="#334155" text-anchor="middle">S1店</text>
-          <text x="648" y="450" font-size="11" font-weight="bold" fill="#334155" text-anchor="middle">S2店</text>
-          <text x="690" y="450" font-size="11" font-weight="bold" fill="#334155" text-anchor="middle">S3店</text>
-          <text x="732" y="450" font-size="11" font-weight="bold" fill="#334155" text-anchor="middle">S4店</text>
-
-          <!-- 最右側：汽車坡道 (往 B1~B4F) -->
-          <path d="M 650,200 L 800,200 A 80,80 0 0,1 865,280 L 855,515 L 785,515 L 790,320 A 30,30 0 0,0 760,280 L 650,280 Z" fill="#d6d3d1" stroke="#57534e" stroke-width="2"/>
-          <text x="820" y="410" font-size="13" font-weight="bold" fill="#292524" text-anchor="middle" transform="rotate(90, 820, 410)">🚗 地下室車道進出口</text>
-
-          <!-- 1F 大樓主要結構黑柱 (對應原圖黑色方塊) -->
-          <g fill="#090d16">
-            <rect x="446" y="276" width="14" height="14"/>
-            <rect x="446" y="395" width="14" height="14"/>
-            <rect x="578" y="276" width="14" height="14"/>
-            <rect x="578" y="380" width="14" height="14"/>
-            <rect x="578" y="492" width="14" height="14"/>
-            <rect x="650" y="195" width="14" height="14"/>
-            <rect x="725" y="195" width="14" height="14"/>
-            <rect x="725" y="276" width="14" height="14"/>
-            <rect x="745" y="380" width="14" height="14"/>
-            <rect x="745" y="492" width="14" height="14"/>
-            <rect x="858" y="200" width="14" height="14"/>
-            <rect x="855" y="305" width="14" height="14"/>
-            <rect x="850" y="420" width="14" height="14"/>
-          </g>
-
-          <!-- 臨明峰街 7 棵行道樹 -->
-          <g fill="#ca8a04" stroke="#713f12" stroke-width="2">
-            <circle cx="155" cy="525" r="16"/>
-            <circle cx="245" cy="525" r="16"/>
-            <circle cx="335" cy="525" r="16"/>
-            <circle cx="425" cy="525" r="16"/>
-            <circle cx="515" cy="525" r="16"/>
-            <circle cx="605" cy="525" r="16"/>
-            <circle cx="770" cy="525" r="16"/>
-          </g>
-        </g>
-
-        <!-- 【圖層 3】嵐庭苑 B4F 地下室開挖範圍 (藍色粗虛線) -->
-        <g id="layer-b4f" opacity="0.85">
-          <polygon points="105,310 415,310 415,270 495,270 575,195 875,195 875,505 105,505" 
-                   fill="url(#b4fHatch)" stroke="#1d4ed8" stroke-width="4" stroke-dasharray="12,6"/>
-          <rect x="125" y="325" width="275" height="32" rx="4" fill="#1e3a8a" fill-opacity="0.85"/>
-          <text x="262" y="346" font-size="13" font-weight="bold" fill="#ffffff" text-anchor="middle">🅿️ B1~B4F 地下室開挖邊界 (深挖入岩盤)</text>
-          
-          <!-- 標示左上角不開挖退縮區 -->
-          <path d="M 240,295 L 240,235" stroke="#2563eb" stroke-width="3" marker-end="url(#arrowBlue)"/>
-          <rect x="120" y="242" width="250" height="46" rx="6" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
-          <text x="245" y="262" font-size="13" font-weight="bold" fill="#1e40af" text-anchor="middle">🛡️ B4F 階梯狀退縮「不開挖區」</text>
-          <text x="245" y="280" font-size="11.5" fill="#1d4ed8" text-anchor="middle">完全避開左上角順向坡腳，零擾動！</text>
-        </g>
-
-        <!-- 【圖層 4】國土測繪雲：地籍圖地號 (978, 979, 984, 988) -->
-        <g id="layer-cad" opacity="0.9">
-          <!-- 978 地號 (最左上方尖角至左下方) -->
-          <polygon points="95,95 270,190 295,280 215,525 95,525" fill="none" stroke="#db2777" stroke-width="3" stroke-dasharray="8,4"/>
-          <rect x="115" y="135" width="115" height="26" rx="4" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
-          <text x="172" y="153" font-size="13" font-weight="bold" fill="#be185d" text-anchor="middle">地號 978 (敏感區)</text>
-
-          <!-- 979 地號 (中間偏左花園與護坡) -->
-          <polygon points="270,190 390,190 420,290 295,280" fill="none" stroke="#db2777" stroke-width="3" stroke-dasharray="8,4"/>
-          <rect x="300" y="205" width="115" height="26" rx="4" fill="#fce7f3" stroke="#db2777" stroke-width="1.5"/>
-          <text x="357" y="223" font-size="13" font-weight="bold" fill="#be185d" text-anchor="middle">地號 979 (敏感區)</text>
-
-          <!-- 984 地號 (北側小三角形折角) -->
-          <polygon points="390,190 475,165 465,245 420,290" fill="none" stroke="#db2777" stroke-width="3"/>
-          <rect x="405" y="132" width="120" height="26" rx="4" fill="#fdf2f8" stroke="#db2777" stroke-width="1.5"/>
-          <text x="465" y="150" font-size="12.5" font-weight="bold" fill="#9d174d" text-anchor="middle">地號 984 (非敏感區)</text>
-
-          <!-- 988 地號 (基地最大主體：原俥亭停車場與218號) -->
-          <polygon points="475,165 895,165 895,525 215,525 295,280 420,290" fill="none" stroke="#be185d" stroke-width="3.5"/>
-          <rect x="520" y="455" width="245" height="44" rx="6" fill="#fce7f3" stroke="#be185d" stroke-width="2"/>
-          <text x="642" y="475" font-size="14" font-weight="bold" fill="#9d174d" text-anchor="middle">地號 988 主體 (原俥亭明峰一場)</text>
-          <text x="642" y="492" font-size="11.5" fill="#be185d" text-anchor="middle">大樓結構100%坐落於此區東南側平地</text>
-        </g>
-
-        <!-- 【圖層 1】山崩雲：順向坡與等高線圖層 -->
-        <g id="layer-slope" opacity="0.75">
-          <!-- 等高線 25m, 20m, 15m -->
-          <path d="M -50,120 Q 180,90 420,20" fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="6,6"/>
-          <text x="350" y="40" font-size="13" font-weight="bold" fill="#15803d">等高線 25m</text>
-
-          <path d="M -50,210 Q 220,170 550,60" fill="none" stroke="#15803d" stroke-width="2" stroke-dasharray="6,6"/>
-          <text x="460" y="80" font-size="13" font-weight="bold" fill="#15803d">等高線 20m</text>
-
-          <path d="M 80,350 Q 340,250 750,90" fill="none" stroke="#15803d" stroke-width="2.5"/>
-          <text x="640" y="120" font-size="13" font-weight="bold" fill="#15803d">等高線 15m (平地與緩坡分界)</text>
-
-          <!-- 山崩雲黃色順向坡多邊形 (僅右下角擦邊基地左上角 978/979) -->
-          <polygon points="-80,30 210,15 315,175 235,255 95,235 -80,290" 
-                   fill="#fde047" fill-opacity="0.65" stroke="#ca8a04" stroke-width="4"/>
-          
-          <text x="85" y="85" font-size="17" font-weight="bold" fill="#854d0e" text-anchor="middle">⛰️ 山崩雲：順向坡 (F-104-05990)</text>
-          <text x="85" y="108" font-size="13" font-weight="bold" fill="#a16207" text-anchor="middle">坡度約 15° 極緩坡｜高程 20m~47m</text>
-
-          <!-- 順向坡主滑動方向箭頭 (朝左下方明峰街298巷) -->
-          <line x1="80" y1="125" x2="-15" y2="235" stroke="#dc2626" stroke-width="4" marker-end="url(#arrowRed)"/>
-          <line x1="150" y1="135" x2="55" y2="245" stroke="#dc2626" stroke-width="4" marker-end="url(#arrowRed)"/>
-          <rect x="-45" y="248" width="225" height="30" rx="4" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
-          <text x="67" y="268" font-size="12.5" font-weight="bold" fill="#dc2626" text-anchor="middle">↙ 順向坡主傾向 (朝西南298巷，非朝大樓)</text>
-        </g>
-
-        <!-- 指北針 (對應 1F 平面圖右下角指北針方向：指向左上方約 -40度) -->
-        <g transform="translate(945, 485)">
-          <circle cx="0" cy="0" r="26" fill="#ffffff" stroke="#334155" stroke-width="2"/>
-          <g transform="rotate(-40)">
-            <polygon points="0,-22 -7,6 0,0 7,6" fill="#dc2626"/>
-            <polygon points="0,22 -7,-6 0,0 7,-6" fill="#64748b"/>
-            <text x="0" y="-25" font-size="12" font-weight="bold" fill="#dc2626" text-anchor="middle">N</text>
-          </g>
-        </g>
-
-      </g>
-    </svg>
-  </div>
-</div>
-
-<!-- 底部四大結論卡片 -->
-<div class="summary-bar">
-  <div class="card">
-    <h3><span class="badge badge-warn">交集處</span>1. 哪裡真正碰到順向坡？</h3>
-    <p>僅基地<strong>最左上角尖端（978、979地號北端，高程15~20m處）</strong>擦邊碰到黃色順向坡的東南角邊緣。建商在此處規劃<strong>「1F 菱形格框護坡」且「B4F 退縮完全不開挖」</strong>，沒有切斷順向坡腳。</p>
-  </div>
-  <div class="card">
-    <h3><span class="badge badge-safe">緩衝帶</span>2. 為什麼 978/979/988 會列敏感區？</h3>
-    <p>地政系統以「整筆地號」列管，只要地號邊角碰到敏感區就會整筆標示。實際上建商將西側（左半部）規劃為<strong>寬約 30 公尺的大型景觀花園</strong>，作為山坡與建築物之間的天然隔離帶。</p>
-  </div>
-  <div class="card">
-    <h3><span class="badge badge-safe">主結構</span>3. 我買的房子（大樓）蓋在哪？</h3>
-    <p>整棟大樓的黑色結構大柱、迎賓大廳與店面（S1~S4），<strong>100% 集中在基地右半部（988地號東側，高程12~15m平地）</strong>，不僅完全離開順向坡範圍，且與順向坡的滑動方向（朝西南298巷）錯開。</p>
-  </div>
-  <div class="card">
-    <h3><span class="badge badge-safe">地基深度</span>4. 地下挖到 B4F 的抗滑效果</h3>
-    <p>主基地往下深挖至 B4F（深約13~15公尺），在汐止淺岩盤地質下，相當於將整座鋼筋混凝土地下室箱體<strong>直接嵌入堅硬砂頁岩盤中</strong>，形成穩固的永久抗滑基座。</p>
-  </div>
-</div>
-
-<script>
-  let isNorthUp = false;
-
-  function updateLayers() {
-    const layers = [
-      { chk: 'chk-slope', op: 'op-slope', el: 'layer-slope' },
-      { chk: 'chk-1f',    op: 'op-1f',    el: 'layer-1f' },
-      { chk: 'chk-b4f',   op: 'op-b4f',   el: 'layer-b4f' },
-      { chk: 'chk-cad',   op: 'op-cad',   el: 'layer-cad' }
-    ];
-    layers.forEach(item => {
-      const checked = document.getElementById(item.chk).checked;
-      const opacity = document.getElementById(item.op).value;
-      const group = document.getElementById(item.el);
-      group.style.display = checked ? 'block' : 'none';
-      group.setAttribute('opacity', opacity);
-    });
-  }
-
-  function togglePerspective() {
-    isNorthUp = !isNorthUp;
-    const world = document.getElementById('world-group');
-    if (isNorthUp) {
-      // 轉正為山崩雲與地籍圖的「上北下南」視角 (順時針轉約 38 度)
-      world.setAttribute('transform', 'rotate(38, 500, 340) scale(0.85)');
-    } else {
-      // 預設為建案 1F 平面配置圖的水平視角
-      world.setAttribute('transform', 'rotate(0, 500, 340) scale(1)');
-    }
-  }
-
-  function loadUserImage(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const imgEl = document.getElementById('user-img-el');
-      const imgGroup = document.getElementById('layer-user-img');
-      imgEl.setAttribute('href', e.target.result);
-      imgGroup.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-  }
-
-  function updateUserImage() {
-    const op = document.getElementById('op-img').value;
-    const scale = document.getElementById('scale-img').value;
-    const imgGroup = document.getElementById('layer-user-img');
-    const imgEl = document.getElementById('user-img-el');
-    imgGroup.setAttribute('opacity', op);
-    const baseW = 820 * scale;
-    const baseH = 480 * scale;
-    imgEl.setAttribute('width', baseW);
-    imgEl.setAttribute('height', baseH);
-  }
-</script>
-
-</body>
-</html>
+      <div
