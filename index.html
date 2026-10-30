@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
-<title>嵐庭苑：順向坡 × 地籍地號 × 1F/B4F 空間套疊分析</title>
+<title>嵐庭苑：順向坡 × 地籍 × 1F/B4F 空間套疊分析</title>
 <style>
   :root {
     --bg: #0f172a;
@@ -12,225 +12,39 @@
     --muted: #94a3b8;
     --accent: #38bdf8;
   }
-  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", "PingFang TC", sans-serif; -webkit-tap-highlight-color: transparent; }
-  body { margin: 0; padding: 12px; background: var(--bg); color: var(--text); display: flex; flex-direction: column; align-items: center; overflow-x: hidden; }
+  * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Microsoft JhengHei", sans-serif; }
+  body { margin: 0; padding: 10px; background: var(--bg); color: var(--text); }
   
-  h1 { font-size: clamp(17px, 4.5vw, 22px); margin: 4px 0 6px 0; color: #fff; text-align: center; line-height: 1.35; }
-  .subtitle { font-size: clamp(12px, 3.2vw, 14px); color: var(--muted); margin-bottom: 12px; text-align: center; line-height: 1.4; }
-  
-  .main-container {
-    display: flex;
-    gap: 16px;
-    max-width: 1360px;
-    width: 100%;
-    align-items: flex-start;
-  }
+  h1 { font-size: 18px; margin: 4px 0; color: #fff; text-align: center; line-height: 1.3; }
+  .subtitle { font-size: 12px; color: var(--muted); margin-bottom: 10px; text-align: center; }
 
-  /* 左側控制面板 */
-  .controls {
-    flex: 1;
-    min-width: 300px;
-    max-width: 380px;
-    background: var(--panel);
-    padding: 14px;
-    border-radius: 12px;
-    border: 1px solid #334155;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    width: 100%;
-  }
-  .control-group {
-    background: #0f172a;
-    padding: 12px;
-    border-radius: 8px;
-    border-left: 4px solid var(--accent);
-  }
-  .control-group.warn { border-left-color: #eab308; }
-  .control-group.cadastral { border-left-color: #ec4899; }
-  .control-group.bldg { border-left-color: #22c55e; }
-  .control-group.b4f { border-left-color: #60a5fa; }
-
-  .layer-header label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-weight: bold;
-    font-size: 15px;
-    margin-bottom: 6px;
-    cursor: pointer;
-    line-height: 1.3;
-  }
-  .layer-desc { font-size: 12.5px; color: var(--muted); line-height: 1.45; margin-bottom: 10px; }
-  .slider-row { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #cbd5e1; }
-  .slider-row span { min-width: 55px; }
-  
-  input[type="range"] { flex: 1; height: 6px; cursor: pointer; accent-color: #38bdf8; }
-  input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; flex-shrink: 0; accent-color: #38bdf8; }
-
-  /* 右側畫布區 */
-  .viewer-wrap {
-    flex: 2.4;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .viewer {
-    width: 100%;
-    background: #f1f5f9;
-    border-radius: 12px;
-    position: relative;
-    overflow: auto;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.45);
-    border: 2px solid #475569;
-    -webkit-overflow-scrolling: touch;
-  }
-  svg {
-    width: 100%;
-    height: auto;
+  .layout {
+    max-width: 1280px;
+    margin: 0 auto;
     display: block;
-    user-select: none;
-    transition: width 0.2s ease;
   }
 
-  /* 畫布右上角懸浮縮放工具列 */
-  .zoom-bar {
+  /* 頂部工具列 */
+  .toolbar {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #1e293b;
-    padding: 8px 12px;
-    border-radius: 8px;
-    border: 1px solid #334155;
     gap: 8px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
   }
-  .zoom-btns { display: flex; gap: 6px; }
-  .btn-sm {
-    padding: 6px 12px;
-    background: #334155;
-    color: #f8fafc;
-    border: 1px solid #475569;
-    border-radius: 6px;
-    font-size: 13px;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  .btn-sm:active { background: #475569; }
-  .btn-view {
-    padding: 8px 14px;
-    background: #2563eb;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 13.5px;
-    font-weight: bold;
-    cursor: pointer;
+  .btn-primary {
     flex: 1;
     min-width: 180px;
-  }
-  .btn-view:active { background: #1d4ed8; }
-
-  /* 實拍圖疊合上傳區 */
-  .upload-box {
-    background: #0f172a;
-    border: 1px dashed #64748b;
-    padding: 12px;
+    padding: 10px 12px;
+    background: #2563eb;
+    color: #fff;
+    border: none;
     border-radius: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    cursor: pointer;
   }
-  .upload-box h4 { margin: 0 0 6px 0; font-size: 14px; color: #38bdf8; }
-
-  /* 底部結論卡片 */
-  .summary-bar {
-    max-width: 1360px;
-    width: 100%;
-    margin-top: 16px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 12px;
-  }
-  .card {
-    background: var(--panel);
-    padding: 14px;
-    border-radius: 10px;
-    border: 1px solid #334155;
-  }
-  .card h3 { margin: 0 0 6px 0; font-size: 15px; color: #38bdf8; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
-  .card p { margin: 0; font-size: 13px; color: #cbd5e1; line-height: 1.5; }
-  .badge { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11.5px; font-weight: bold; }
-  .badge-safe { background: #166534; color: #dcfce7; }
-  .badge-warn { background: #854d0e; color: #fef9c3; }
-
-  /* 📱 手機與平板響應式斷點 (螢幕寬度小於 900px 時自動轉為上下排列，且地圖置頂) */
-  @media (max-width: 900px) {
-    body { padding: 8px; }
-    .main-container {
-      flex-direction: column;
-      gap: 12px;
-    }
-    .viewer-wrap {
-      order: 1; /* 手機版地圖優先排在最上面 */
-      position: sticky;
-      top: 4px;
-      z-index: 20;
-    }
-    .controls {
-      order: 2; /* 控制面板排在下面，方便邊滑邊看上面地圖 */
-      max-width: 100%;
-      min-width: 100%;
-      padding: 12px;
-    }
-    .summary-bar {
-      grid-template-columns: 1fr;
-    }
-  }
-</style>
-</head>
-<body>
-
-<h1>🏢 嵐庭苑（汐止北山段）順向坡 × 地籍 × 1F/B4F 套疊</h1>
-<div class="subtitle">已將「山崩雲上北下南座標」旋轉對齊「建案 1F 平面配置圖視角（明峰街水平置底）」</div>
-
-<div class="main-container">
-  <!-- 左側控制面板 (手機版會自動排在地圖下方) -->
-  <div class="controls">
-    <div class="control-group warn">
-      <div class="layer-header">
-        <label><input type="checkbox" id="chk-slope" checked onchange="updateLayers()"> 1. 山崩雲：順向坡與等高線</label>
-      </div>
-      <div class="layer-desc">黃色為順向坡(F-104-05990)，平均坡度約15度緩坡，主滑動方向朝左下方(西南側298巷)，僅東南邊緣擦邊基地左上角。</div>
-      <div class="slider-row">
-        <span>透明度</span>
-        <input type="range" id="op-slope" min="0" max="1" step="0.05" value="0.75" oninput="updateLayers()">
-      </div>
-    </div>
-
-    <div class="control-group bldg">
-      <div class="layer-header">
-        <label><input type="checkbox" id="chk-1f" checked onchange="updateLayers()"> 2. 嵐庭苑：1F 地面配置圖</label>
-      </div>
-      <div class="layer-desc">左半部為30米寬景觀花園與左上角「菱形格框護坡」；右半部為大樓結構柱、大廳、S1~S4店面與車道。</div>
-      <div class="slider-row">
-        <span>透明度</span>
-        <input type="range" id="op-1f" min="0" max="1" step="0.05" value="0.9" oninput="updateLayers()">
-      </div>
-    </div>
-
-    <div class="control-group b4f">
-      <div class="layer-header">
-        <label><input type="checkbox" id="chk-b4f" checked onchange="updateLayers()"> 3. 嵐庭苑：B4F 開挖邊界</label>
-      </div>
-      <div class="layer-desc">藍色粗虛線為B4F連續壁開挖範圍。左上角順向坡腳處「大幅階梯狀退縮不開挖」，完全不切斷順向坡腳！</div>
-      <div class="slider-row">
-        <span>透明度</span>
-        <input type="range" id="op-b4f" min="0" max="1" step="0.05" value="0.85" oninput="updateLayers()">
-      </div>
-    </div>
-
-    <div class="control-group cadastral">
-      <div class="layer-header">
-        <label><input type="checkbox" id="chk-cad" checked onchange="updateLayers()"> 4. 國土測繪雲：地籍圖地號</label>
-      </div>
-      <div class="layer-desc">粉紅框線為地號邊界：978/979位於左側花園與護坡(敏感區邊緣)；988位於右側大樓主體平地。</div>
-      <div
+  .btn-zoom {
+    padding: 10px 14px;
+    background: #334155;
+    color: #fff;
+    border: 1px
